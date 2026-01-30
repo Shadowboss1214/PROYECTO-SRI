@@ -3,4 +3,5 @@ En este repositorio se encontrará los programas realizados en la materia optati
   - **Salazar Bastarrachea Gael Francisco**
   - **Solis Ek Emiliano**
   - **Cimé Esteban**
-![SalazarGael](https://github.com/user-attachments/assets/d8eb052b-91bc-4d37-bcb6-006e3e45bba9)
+
+<img src="https://github.com/user-attachments/assets/d8eb052b-91bc-4d37-bcb6-006e3e45bba9" alt="Descripción" width="300" />
