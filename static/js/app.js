@@ -170,8 +170,8 @@ async function loadHome() {
 
   // Cargar en paralelo
   const [trendingRes, recommendRes] = await Promise.allSettled([
-    fetch(`${API}/api/movies/trending?limit=24`, { credentials: 'include' }),
-    fetch(`${API}/api/recommend?limit=16`,        { credentials: 'include' }),
+    fetch(`${API}/api/movies/trending?limit=50`, { credentials: 'include' }),
+    fetch(`${API}/api/recommend?limit=50`,        { credentials: 'include' }),
   ])
 
   const trending   = trendingRes.status   === 'fulfilled' ? await trendingRes.value.json()   : null
@@ -251,16 +251,72 @@ function renderCarousel(container, { title, explanation, movies, icon }) {
       <i class="ti ${icon}" style="color:var(--accent);font-size:18px" aria-hidden="true"></i>
       <span class="carousel-title">${title}</span>
       ${explanation ? `<span class="carousel-explanation">— ${explanation}</span>` : ''}
+      <div class="carousel-nav">
+        <button class="carousel-btn btn-prev" aria-label="Anterior" title="Anterior">
+          <i class="ti ti-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button class="carousel-btn btn-next" aria-label="Siguiente" title="Siguiente">
+          <i class="ti ti-chevron-right" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
     <div class="carousel-track-wrap">
       <div class="carousel-track">
         ${movies.map(m => movieCardHTML(m)).join('')}
       </div>
     </div>
+    <div class="carousel-dots"></div>
   `
   container.appendChild(section)
 
-  // Bind clicks + scroll tracking
+  const track   = section.querySelector('.carousel-track')
+  const btnPrev = section.querySelector('.btn-prev')
+  const btnNext = section.querySelector('.btn-next')
+  const dotsEl  = section.querySelector('.carousel-dots')
+
+  // ── Calcular cuántas tarjetas caben en pantalla ───────────────────────────
+  const CARD_W   = 150 + 14   // width + gap
+  const scrollBy = () => Math.max(1, Math.floor(track.clientWidth / CARD_W)) * CARD_W
+
+  // ── Dots de posición ──────────────────────────────────────────────────────
+  const totalPages = Math.ceil(movies.length / Math.max(1, Math.floor(track.clientWidth / CARD_W)))
+  if (totalPages > 1) {
+    for (let i = 0; i < totalPages; i++) {
+      const dot = document.createElement('span')
+      dot.className = 'carousel-dot' + (i === 0 ? ' active' : '')
+      dot.addEventListener('click', () => {
+        track.scrollLeft = i * scrollBy()
+      })
+      dotsEl.appendChild(dot)
+    }
+  }
+
+  const updateButtons = () => {
+    const atStart = track.scrollLeft <= 4
+    const atEnd   = track.scrollLeft >= track.scrollWidth - track.clientWidth - 4
+    btnPrev.disabled = atStart
+    btnNext.disabled = atEnd
+
+    // Actualizar dot activo
+    const dots = dotsEl.querySelectorAll('.carousel-dot')
+    if (dots.length > 0) {
+      const page = Math.round(track.scrollLeft / scrollBy())
+      dots.forEach((d, i) => d.classList.toggle('active', i === page))
+    }
+  }
+
+  btnPrev.addEventListener('click', () => {
+    track.scrollLeft -= scrollBy()
+  })
+  btnNext.addEventListener('click', () => {
+    track.scrollLeft += scrollBy()
+  })
+
+  // Inicializar estado de botones
+  updateButtons()
+  track.addEventListener('scroll', updateButtons, { passive: true })
+
+  // ── Bind clicks + scroll tracking ────────────────────────────────────────
   section.querySelectorAll('.movie-card').forEach((card, idx) => {
     card.addEventListener('click', () => {
       const id = +card.dataset.id
@@ -270,8 +326,6 @@ function renderCarousel(container, { title, explanation, movies, icon }) {
     })
   })
 
-  // Scroll tracking (qué tanto recorrió el carrusel)
-  const track = section.querySelector('.carousel-track')
   let scrollTimer = null
   track.addEventListener('scroll', () => {
     clearTimeout(scrollTimer)
@@ -279,7 +333,7 @@ function renderCarousel(container, { title, explanation, movies, icon }) {
       const pct = Math.round((track.scrollLeft / (track.scrollWidth - track.clientWidth)) * 100)
       if (pct > 20) logInteraction('scroll', null, { carousel: title, scroll_pct: pct })
     }, 500)
-  })
+  }, { passive: true })
 }
 
 function movieCardHTML(m) {
