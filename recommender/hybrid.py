@@ -140,14 +140,15 @@ class HybridEngine:
         cur = self.conn.cursor()
         cur.execute("""
             SELECT movie_id, title, year, genres, poster_url,
-                   avg_rating, director, views_by_country
+                   avg_rating, director, views_by_country,
+                   views_total
             FROM   movies
             WHERE  movie_id != ALL(%s)
               AND  poster_url IS NOT NULL
               AND  avg_rating > 0
-            ORDER  BY avg_rating DESC,
-                      rating_count DESC,
-                      popularity    DESC
+            ORDER  BY views_total DESC,
+                      avg_rating DESC,
+                      rating_count DESC
             LIMIT  %s
         """, (rated_ids or [0], limit))
         return [dict(r) for r in cur.fetchall()]
@@ -274,13 +275,15 @@ class HybridEngine:
         cur.execute("""
             SELECT movie_id, title, year, genres, poster_url,
                    avg_rating, director, views_by_country,
+                   views_total,
                    COALESCE((views_by_country->>%s)::INTEGER, 0) AS country_views
             FROM   movies
             WHERE  poster_url IS NOT NULL
               AND  avg_rating > 0
-            ORDER  BY avg_rating DESC,
-                      rating_count DESC,
-                      COALESCE((views_by_country->>%s)::INTEGER, 0) DESC
+            ORDER  BY COALESCE((views_by_country->>%s)::INTEGER, 0) DESC,
+                      views_total DESC,
+                      avg_rating DESC,
+                      rating_count DESC
             LIMIT  %s
         """, (country_code, country_code, limit))
         rows = [dict(r) for r in cur.fetchall()]

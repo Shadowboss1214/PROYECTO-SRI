@@ -540,7 +540,9 @@ def trending_movies():
                        avg_rating, rating_count, views_total
                 FROM movies
                 WHERE movie_id IN ({placeholders}) AND poster_url IS NOT NULL
-                ORDER BY avg_rating DESC, views_total DESC""",
+                ORDER BY views_total DESC,
+                         avg_rating DESC,
+                         rating_count DESC""",
             tuple(trending_ids)
         )
     else:
@@ -552,8 +554,9 @@ def trending_movies():
                FROM   movies
                WHERE  poster_url IS NOT NULL
                  AND  avg_rating > 0
-               ORDER  BY avg_rating DESC,
-                         COALESCE((views_by_country->>%s)::INTEGER, 0) DESC,
+               ORDER  BY COALESCE((views_by_country->>%s)::INTEGER, 0) DESC,
+                         views_total DESC,
+                         avg_rating DESC,
                          rating_count DESC
                LIMIT  %s OFFSET %s""",
             (country_code, country_code, limit, offset)
