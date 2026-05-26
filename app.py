@@ -533,26 +533,28 @@ def trending_movies():
     trending_ids = get_trending_by_country(country_code, limit=limit) if country_code else []
 
     if trending_ids:
-        # Trae las películas en el orden de trending
+        # Trae las películas trending ordenadas por rating DESC luego vistas
         placeholders = ",".join(["%s"] * len(trending_ids))
         movies = query(
             f"""SELECT movie_id, title, year, genres, poster_url,
                        avg_rating, rating_count, views_total
                 FROM movies
                 WHERE movie_id IN ({placeholders}) AND poster_url IS NOT NULL
-                ORDER BY views_total DESC""",
+                ORDER BY avg_rating DESC, views_total DESC""",
             tuple(trending_ids)
         )
     else:
-        # Fallback: más populares globalmente por avg_rating y vistas
+        # Fallback: ordenado por rating DESC, luego popularidad por país, luego cantidad de ratings
         movies = query(
             """SELECT movie_id, title, year, genres, poster_url,
                       avg_rating, rating_count, views_total,
                       COALESCE((views_by_country->>%s)::INTEGER, 0) AS country_views
                FROM   movies
                WHERE  poster_url IS NOT NULL
-               ORDER  BY COALESCE((views_by_country->>%s)::INTEGER, 0) DESC,
-                         avg_rating DESC, rating_count DESC
+                 AND  avg_rating > 0
+               ORDER  BY avg_rating DESC,
+                         COALESCE((views_by_country->>%s)::INTEGER, 0) DESC,
+                         rating_count DESC
                LIMIT  %s OFFSET %s""",
             (country_code, country_code, limit, offset)
         )

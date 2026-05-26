@@ -178,7 +178,7 @@ def pull_all_vectors(conn) -> tuple[list[str], np.ndarray]:
 
 def compute_k(n_users: int) -> int:
     """K = 5% de usuarios, mínimo 2, máximo 50."""
-    k = max(2, min(50, round(n_users * 0.05)))
+    k = max(2, min(50, round(n_users * 0.05))) + 1  # +1 para evitar clusters vacíos
     return k
 
 

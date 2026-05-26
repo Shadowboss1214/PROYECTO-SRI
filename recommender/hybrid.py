@@ -142,8 +142,12 @@ class HybridEngine:
             SELECT movie_id, title, year, genres, poster_url,
                    avg_rating, director, views_by_country
             FROM   movies
-            WHERE  movie_id != ALL(%s) AND poster_url IS NOT NULL
-            ORDER  BY avg_rating DESC, rating_count DESC
+            WHERE  movie_id != ALL(%s)
+              AND  poster_url IS NOT NULL
+              AND  avg_rating > 0
+            ORDER  BY avg_rating DESC,
+                      rating_count DESC,
+                      popularity    DESC
             LIMIT  %s
         """, (rated_ids or [0], limit))
         return [dict(r) for r in cur.fetchall()]
@@ -273,8 +277,10 @@ class HybridEngine:
                    COALESCE((views_by_country->>%s)::INTEGER, 0) AS country_views
             FROM   movies
             WHERE  poster_url IS NOT NULL
-            ORDER  BY COALESCE((views_by_country->>%s)::INTEGER, 0) DESC,
-                      avg_rating DESC
+              AND  avg_rating > 0
+            ORDER  BY avg_rating DESC,
+                      rating_count DESC,
+                      COALESCE((views_by_country->>%s)::INTEGER, 0) DESC
             LIMIT  %s
         """, (country_code, country_code, limit))
         rows = [dict(r) for r in cur.fetchall()]
@@ -283,7 +289,7 @@ class HybridEngine:
             rm = self._to_rec(m)
             rm.final_score = m.get("avg_rating", 0) / 5.0
             rm.source      = "popular"
-            rm.explanation = "Tendencia en tu región"
+            rm.explanation = "Las mejor calificadas de CineMatch"
             result.append(rm)
         return result
 
