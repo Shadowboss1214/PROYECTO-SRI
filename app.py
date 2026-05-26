@@ -869,3 +869,5 @@ if __name__ == "__main__":
     print(f"\n🎬 CineMatch corriendo en http://localhost:{port}")
     print(f"   Modo: {'desarrollo' if debug else 'producción'}\n")
     app.run(host="0.0.0.0", port=port, debug=debug)
+
+#Comentarios finales:
